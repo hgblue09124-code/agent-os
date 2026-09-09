@@ -1,0 +1,22 @@
+[project]
+name = "agent-os"
+version = "0.1.0"
+description = "Canonical Agent OS architecture: a module-centric kernel and runtime foundation."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "hgblue09124-code" }]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["Kernel*", "Module*", "Composition*", "Verification*"]
+
+[tool.pytest.ini_options]
+testpaths = ["Tests"]
+pythonpath = ["."]
+addopts = "-q"
