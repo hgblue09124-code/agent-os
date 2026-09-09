@@ -10,6 +10,13 @@ from typing import Protocol, runtime_checkable
 
 from Module.Capability import ModuleCapability
 from Module.Contract import ModuleContract
+from Module.Execution import (
+    ExecutionFailure,
+    ExecutionRequest,
+    ExecutionResult,
+    FailureType,
+    ModuleExecutor,
+)
 from Module.Identity import ModuleIdentity
 from Module.Input import InputBoundary
 from Module.Lifecycle import LifecycleState, ModuleLifecycle
@@ -63,12 +70,17 @@ __all__ = [
     "FIRST_CLASS_PRIMITIVE",
     "MODULE_KINDS",
     "AtomicModule",
+    "ExecutionFailure",
+    "ExecutionRequest",
+    "ExecutionResult",
+    "FailureType",
     "InputBoundary",
     "LifecycleState",
     "MesoModule",
     "Module",
     "ModuleCapability",
     "ModuleContract",
+    "ModuleExecutor",
     "ModuleIdentity",
     "ModuleLifecycle",
     "OutputBoundary",
