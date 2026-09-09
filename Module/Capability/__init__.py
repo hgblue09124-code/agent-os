@@ -18,8 +18,8 @@ class ModuleCapability:
             raise ValueError("Module responsibility must be a non-empty string.")
         if not isinstance(self.tags, (tuple, list)):
             raise ValueError("Module tags must be a tuple or list of strings.")
-        if isinstance(self.tags, list):
-            object.__setattr__(self, "tags", tuple(self.tags))
-        for tag in self.tags:
+        tags_tuple = tuple(self.tags)
+        for tag in tags_tuple:
             if not isinstance(tag, str) or not tag.strip():
                 raise ValueError("Tag must be a non-empty string.")
+        object.__setattr__(self, "tags", tags_tuple)

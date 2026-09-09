@@ -45,10 +45,10 @@ class ModuleContract:
             raise ValueError("output_boundary must be a valid OutputBoundary instance.")
         if not isinstance(self.dependencies, (tuple, list)):
             raise ValueError("dependencies must be a tuple or list of strings.")
-        if isinstance(self.dependencies, list):
-            object.__setattr__(self, "dependencies", tuple(self.dependencies))
-        for dep in self.dependencies:
+        deps_tuple = tuple(self.dependencies)
+        for dep in deps_tuple:
             if not isinstance(dep, str) or not dep.strip():
                 raise ValueError("Dependency names must be non-empty strings.")
+        object.__setattr__(self, "dependencies", deps_tuple)
         if not isinstance(self.lifecycle, ModuleLifecycle):
             raise ValueError("lifecycle must be a valid ModuleLifecycle instance.")

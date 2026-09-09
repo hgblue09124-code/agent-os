@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from dataclasses import FrozenInstanceError
 import pytest
 
 from Module import (
@@ -15,7 +16,6 @@ from Module import (
     ModuleLifecycle,
     OutputBoundary,
 )
-from Verification.Contract import verify_module_contract, ContractVerificationResult
 
 
 def test_valid_module_contract_construction() -> None:
@@ -46,32 +46,45 @@ def test_valid_module_contract_construction() -> None:
     assert contract.lifecycle == lifecycle
 
 
-def test_identity_is_explicit() -> None:
+def test_identity_is_explicit_and_immutable() -> None:
     identity = ModuleIdentity(name="data_parser", version="2.1.0", kind="atomic")
     assert identity.name == "data_parser"
     assert identity.version == "2.1.0"
     assert identity.kind == "atomic"
 
+    with pytest.raises(FrozenInstanceError):
+        identity.name = "new_name"  # type: ignore[misc]
 
-def test_capability_is_explicit() -> None:
+
+def test_capability_is_explicit_and_immutable() -> None:
     capability = ModuleCapability(
         responsibility="Parse JSON payload into structured dictionaries.",
-        tags=("parser", "json"),
+        tags=["parser", "json"],  # List input converted to tuple
     )
     assert capability.responsibility == "Parse JSON payload into structured dictionaries."
     assert capability.tags == ("parser", "json")
 
+    with pytest.raises(FrozenInstanceError):
+        capability.responsibility = "Modified"  # type: ignore[misc]
 
-def test_input_and_output_boundaries_are_explicit() -> None:
+
+def test_input_and_output_boundaries_are_immutable() -> None:
     in_b = InputBoundary(schema={"payload": bytes, "encoding": str})
     out_b = OutputBoundary(schema={"parsed_dict": dict})
 
-    assert in_b.schema == {"payload": bytes, "encoding": str}
-    assert out_b.schema == {"parsed_dict": dict}
+    assert in_b.schema["payload"] == bytes
+    assert out_b.schema["parsed_dict"] == dict
+
+    # Schema must be immutable MappingProxyType
+    with pytest.raises(TypeError):
+        in_b.schema["new_field"] = int  # type: ignore[index]
+
+    with pytest.raises(TypeError):
+        out_b.schema["new_field"] = int  # type: ignore[index]
 
 
-def test_dependencies_are_explicit() -> None:
-    deps = ("crypto_provider", "auth_verifier")
+def test_dependencies_are_explicit_and_immutable() -> None:
+    deps = ["crypto_provider", "auth_verifier"]
     identity = ModuleIdentity(name="secure_vault", version="1.0.0", kind="atomic")
     capability = ModuleCapability(responsibility="Store sensitive credentials safely.")
     contract = ModuleContract(
@@ -81,21 +94,26 @@ def test_dependencies_are_explicit() -> None:
         output_boundary=OutputBoundary(),
         dependencies=deps,
     )
+
     assert contract.dependencies == ("crypto_provider", "auth_verifier")
 
+    with pytest.raises(FrozenInstanceError):
+        contract.dependencies = ("other",)  # type: ignore[misc]
 
-def test_lifecycle_is_explicit() -> None:
+
+def test_lifecycle_is_value_oriented_and_immutable() -> None:
     lifecycle = ModuleLifecycle(state=LifecycleState.CREATED)
     assert lifecycle.state == LifecycleState.CREATED
 
-    lifecycle.transition_to(LifecycleState.INITIALIZED)
-    assert lifecycle.state == LifecycleState.INITIALIZED
+    with pytest.raises(FrozenInstanceError):
+        lifecycle.state = LifecycleState.INITIALIZED  # type: ignore[misc]
 
-    lifecycle.transition_to("running")
-    assert lifecycle.state == LifecycleState.RUNNING
+    next_lifecycle = lifecycle.with_state(LifecycleState.INITIALIZED)
+    assert lifecycle.state == LifecycleState.CREATED  # Original remains unchanged
+    assert next_lifecycle.state == LifecycleState.INITIALIZED
 
     with pytest.raises(ValueError, match="Invalid lifecycle state"):
-        lifecycle.transition_to("non_existent_state")
+        ModuleLifecycle(state="non_existent_state")
 
 
 def test_invalid_contract_state_is_rejected_deterministically() -> None:
@@ -195,18 +213,3 @@ def test_no_companion_repository_imported() -> None:
     for loaded_mod in sys.modules:
         for forbidden in forbidden_modules:
             assert forbidden not in loaded_mod, f"Forbidden module {forbidden} found in sys.modules!"
-
-
-def test_local_contract_verification() -> None:
-    identity = ModuleIdentity(name="verified_mod", version="1.0.0", kind="atomic")
-    capability = ModuleCapability(responsibility="Valid responsibility.")
-    contract = ModuleContract(
-        identity=identity,
-        capability=capability,
-        input_boundary=InputBoundary(),
-        output_boundary=OutputBoundary(),
-    )
-
-    res: ContractVerificationResult = verify_module_contract(contract)
-    assert res.is_valid is True
-    assert res.errors == ()

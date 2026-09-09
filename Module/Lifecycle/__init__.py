@@ -17,18 +17,19 @@ class LifecycleState(str, Enum):
     FAILED = "failed"
 
 
-@dataclass
+@dataclass(frozen=True)
 class ModuleLifecycle:
     state: LifecycleState = LifecycleState.CREATED
 
-    def transition_to(self, new_state: LifecycleState | str) -> None:
-        if isinstance(new_state, str):
+    def __post_init__(self) -> None:
+        if isinstance(self.state, str) and not isinstance(self.state, LifecycleState):
             try:
-                new_state = LifecycleState(new_state)
+                object.__setattr__(self, "state", LifecycleState(self.state))
             except ValueError:
-                raise ValueError(f"Invalid lifecycle state: '{new_state}'.")
-        elif isinstance(new_state, LifecycleState):
-            pass
-        else:
-            raise ValueError(f"Invalid lifecycle state: '{new_state}'.")
-        self.state = new_state
+                raise ValueError(f"Invalid lifecycle state: '{self.state}'.")
+        elif not isinstance(self.state, LifecycleState):
+            raise ValueError(f"Invalid lifecycle state: '{self.state}'.")
+
+    def with_state(self, new_state: LifecycleState | str) -> ModuleLifecycle:
+        """Returns a new ModuleLifecycle instance with the updated state (value-oriented)."""
+        return ModuleLifecycle(state=new_state)
