@@ -31,10 +31,10 @@ def test_contract_questions_are_complete() -> None:
     assert required == set(Module.Contract.CONTRACT_QUESTIONS)
 
 
-def test_contract_facets_are_reserved() -> None:
-    assert Module.Contract.IMPLEMENTED is False
-    assert Module.Identity.IMPLEMENTED is False
-    assert Module.Capability.IMPLEMENTED is False
-    assert Module.Input.IMPLEMENTED is False
-    assert Module.Output.IMPLEMENTED is False
-    assert Module.Lifecycle.IMPLEMENTED is False
+def test_contract_facets_are_implemented() -> None:
+    assert Module.Contract.IMPLEMENTED is True
+    assert Module.Identity.IMPLEMENTED is True
+    assert Module.Capability.IMPLEMENTED is True
+    assert Module.Input.IMPLEMENTED is True
+    assert Module.Output.IMPLEMENTED is True
+    assert Module.Lifecycle.IMPLEMENTED is True
