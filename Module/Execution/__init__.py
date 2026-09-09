@@ -116,6 +116,7 @@ class MinimalModuleExecutor:
     """Minimal concrete implementation of ModuleExecutor Protocol."""
 
     def execute(self, module: Module, request: ExecutionRequest) -> ExecutionResult:
+        # Step 1: Validate request structure
         if not isinstance(request, ExecutionRequest):
             return ExecutionResult(
                 is_success=False,
@@ -125,14 +126,11 @@ class MinimalModuleExecutor:
                 ),
             )
 
+        # Step 2: Validate target identity
         mod_identity = module.contract.identity
         req_identity = request.target_identity
 
-        if (
-            req_identity.name != mod_identity.name
-            or req_identity.version != mod_identity.version
-            or req_identity.kind != mod_identity.kind
-        ):
+        if req_identity != mod_identity:
             return ExecutionResult(
                 is_success=False,
                 failure=ExecutionFailure(
@@ -145,22 +143,11 @@ class MinimalModuleExecutor:
                 ),
             )
 
+        # Step 3: Invoke explicit execution capability directly
         try:
-            handler = getattr(module, "handler", None) or getattr(module, "execute", None) or getattr(module, "run", None)
-            if handler is None and callable(module):
-                handler = module
+            raw_output = module.execute(request.input_payload)
 
-            if handler is None:
-                return ExecutionResult(
-                    is_success=False,
-                    failure=ExecutionFailure(
-                        failure_type=FailureType.CONTRACT_VIOLATION,
-                        message=f"Module '{mod_identity.name}' has no executable handler/capability.",
-                    ),
-                )
-
-            raw_output = handler(request.input_payload)
-
+            # Step 4: Normalize result
             if isinstance(raw_output, ExecutionResult):
                 return raw_output
 
@@ -175,6 +162,7 @@ class MinimalModuleExecutor:
                 output_payload={"result": raw_output},
             )
 
+        # Step 5: Handle module failure
         except Exception as exc:
             return ExecutionResult(
                 is_success=False,

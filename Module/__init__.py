@@ -35,6 +35,10 @@ class Module(Protocol):
     def contract(self) -> ModuleContract:
         ...
 
+    def execute(self, input_payload: Mapping[str, Any]) -> Mapping[str, Any] | ExecutionResult:
+        """Explicit single entry point for module execution capability."""
+        ...
+
 
 class AtomicModule:
     """Atomic Module implementation fulfilling ModuleContract."""
@@ -56,6 +60,11 @@ class AtomicModule:
     @property
     def handler(self) -> Callable[[Mapping[str, Any]], Any] | None:
         return self._handler
+
+    def execute(self, input_payload: Mapping[str, Any]) -> Mapping[str, Any] | ExecutionResult:
+        if self._handler is None:
+            raise NotImplementedError(f"AtomicModule '{self._contract.identity.name}' has no handler defined.")
+        return self._handler(input_payload)
 
 
 class MesoModule:
@@ -84,6 +93,11 @@ class MesoModule:
     @property
     def handler(self) -> Callable[[Mapping[str, Any]], Any] | None:
         return self._handler
+
+    def execute(self, input_payload: Mapping[str, Any]) -> Mapping[str, Any] | ExecutionResult:
+        if self._handler is None:
+            raise NotImplementedError(f"MesoModule '{self._contract.identity.name}' has no execution handler defined.")
+        return self._handler(input_payload)
 
 
 __all__ = [

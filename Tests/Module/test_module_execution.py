@@ -265,6 +265,28 @@ def test_minimal_module_executor_module_failure_handling() -> None:
     assert res.failure.details.get("exception") == "ValueError"
 
 
+def test_minimal_module_executor_unimplemented_module_failure() -> None:
+    executor = MinimalModuleExecutor()
+
+    identity = ModuleIdentity(name="unhandled_mod", version="1.0.0", kind="atomic")
+    contract = ModuleContract(
+        identity=identity,
+        capability=ModuleCapability(responsibility="No handler"),
+        input_boundary=InputBoundary(),
+        output_boundary=OutputBoundary(),
+    )
+
+    atomic_mod = AtomicModule(contract=contract)  # No handler
+    req = ExecutionRequest(target_identity=identity)
+
+    res = executor.execute(atomic_mod, req)
+
+    assert res.is_success is False
+    assert res.failure is not None
+    assert res.failure.failure_type == FailureType.MODULE_FAILURE
+    assert "has no handler defined" in res.failure.message
+
+
 def test_minimal_module_executor_invalid_request() -> None:
     executor = MinimalModuleExecutor()
 
